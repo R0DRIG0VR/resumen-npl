@@ -1,10 +1,8 @@
 import spacy
-from collections import Counter
 from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
+import networkx as nx
 
 nlp = spacy.load("es_core_news_sm")
-
 
 def limpiar_texto(texto):
     doc = nlp(texto.lower())
@@ -14,35 +12,33 @@ def limpiar_texto(texto):
     ]
     return palabras_limpias
 
+def vectorizar_oraciones(oraciones):
+    return [nlp(oracion).vector for oracion in oraciones]
 
 def resumir_texto(texto, n_oraciones=3):
     doc = nlp(texto)
-    oraciones = list(doc.sents)
+    oraciones = [sent.text.strip() for sent in doc.sents if len(sent.text.strip().split()) > 4]
 
     if len(oraciones) <= n_oraciones:
-        return texto  # No resumir si el texto es corto
+        return texto
 
-    # Obtener vectores de cada oración
-    vectores = [oracion.vector for oracion in oraciones]
+    vectores = vectorizar_oraciones(oraciones)
 
-    # Calcular el vector promedio del documento
-    vector_promedio = np.mean(vectores, axis=0).reshape(1, -1)
+    # Crear matriz de similitud
+    sim_matrix = cosine_similarity(vectores)
 
-    # Calcular la similitud de cada oración con el tema general
-    similitudes = [
-        cosine_similarity([v.reshape(1, -1)[0]], vector_promedio)[0][0]
-        for v in vectores
-    ]
+    # Crear grafo y aplicar PageRank
+    grafo = nx.from_numpy_array(sim_matrix)
+    scores = nx.pagerank(grafo)
 
-    # Ordenar oraciones por similitud
-    oraciones_ordenadas = [
-        oracion for _, oracion in sorted(zip(similitudes, oraciones), reverse=True)
-    ]
+    # Ordenar oraciones por score de TextRank
+    oraciones_ordenadas = sorted(
+        ((scores[i], oracion) for i, oracion in enumerate(oraciones)),
+        reverse=True
+    )
 
-    # Seleccionar las más representativas
-    resumen = " ".join([oracion.text for oracion in oraciones_ordenadas[:n_oraciones]])
+    resumen = " ".join([oracion for _, oracion in oraciones_ordenadas[:n_oraciones]])
     return resumen
-
 
 def analizar_texto(texto):
     doc = nlp(texto)
