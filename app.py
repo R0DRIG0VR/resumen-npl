@@ -15,9 +15,10 @@ def analizar():
     # Convertir nivel a porcentaje entre 0.1 y 1.0
     porcentaje = max(0.1, min(1.0, nivel / 100))
 
-    resultado = analizar_texto(texto, porcentaje)
-    return jsonify(resultado)
+    # Activar modo debug para obtener todos los campos
+    resultado = analizar_texto(texto, porcentaje, debug=True)
 
+    return jsonify(resultado)
 
 if __name__ == "__main__":
     app.run(debug=True)
