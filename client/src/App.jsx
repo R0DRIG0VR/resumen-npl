@@ -1,8 +1,10 @@
 import  {Route, Routes} from 'react-router';
+
+import Home from "./pages/Home.jsx";
 function App(){
     return(
         <Routes>
-            <Route path="/" element={<h1>Home Page</h1>} />
+            <Route path="/" element={<Home/>} />
         </Routes>
     )
 }
