@@ -39,7 +39,7 @@ export default function Footer() {
                         <li>Gutierrez Copara Carlos Antonio</li>
                         <li>Rojas Carvajal Ricardo</li>
                         <li>Rojas Rojas Adrian Alex</li>
-                        <li>Velazquez Ricaldez Rodrigo</li>
+                        <li>Velasquez Ricaldez Rodrigo</li>
                     </ul>
                 </div>
             </div>
