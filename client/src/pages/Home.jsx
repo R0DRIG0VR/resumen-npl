@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {resumirTexto, resumirPdf} from "../api/summarizer";
 import {
     Type,
@@ -24,6 +24,8 @@ export default function TextSummarizer() {
     const [fullScreen, setFullScreen] = useState(false);
     const [fullScreenStep, setFullScreenStep] = useState(null);
     const [pdfFile, setPdfFile] = useState(null); // PDF cargado
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [monicaVoice, setMonicaVoice] = useState(null);
 
     const stepIcons = [
         <Type className="w-5 h-5"/>,
@@ -301,37 +303,106 @@ export default function TextSummarizer() {
         }
     };
 
+    useEffect(() => {
+    const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        let selectedVoice = null;
+
+        if (language === "es") {
+            selectedVoice = voices.find(v =>
+                v.lang.startsWith("es") && v.name.toLowerCase().includes("mónica")
+            );
+        } else if (language === "en") {
+            // Puedes ajustar la preferencia de voz inglesa aquí
+            selectedVoice = voices.find(v =>
+                v.lang.startsWith("en") &&
+                (v.name.includes("Google") || v.name.includes("Microsoft") || v.name.includes("Samantha"))
+            );
+        }
+
+        setMonicaVoice(selectedVoice || null);
+    };
+
+    if (typeof window !== "undefined") {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices();
+    }
+}, [language]);
+
+    useEffect(() => {
+    const handleBeforeUnload = () => {
+        window.speechSynthesis.cancel();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+        window.speechSynthesis.cancel(); // también por si desmonta
+    };
+}, []);
+
+
+
+    const speakTextResumen = () => {
+        const resumenText = document.querySelector(".text-gray-800.whitespace-pre-wrap")?.textContent;
+        if (!resumenText || !monicaVoice) return;
+
+        // Si está hablando, detenerlo
+        if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+            setIsSpeaking(false);
+            return;
+        }
+
+        // Iniciar lectura desde el inicio
+        const utterance = new SpeechSynthesisUtterance(resumenText);
+        utterance.lang = "es-ES";
+        utterance.voice = monicaVoice;
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+    };
 
     // Cambiado: usa resumirTexto del API
     const handleTextSummarize = async () => {
-        if (!inputText.trim()) {
-            showToast(t.error, t.errorText, "destructive");
-            return;
-        }
-        setIsLoading(true);
-        try {
-            const data = await resumirTexto({
-                texto: inputText,
-                resumen_nivel: summaryLevel,
-                lang: language,
-            });
-            // Map 'resumen' to 'summary' for frontend compatibility
-            setResult({
-                ...data,
-                summary: data.resumen ?? data.summary ?? "",
-            });
-        } catch (error) {
-            const backendMsg =
-                error.response?.data?.detail ||
-                error.response?.data?.error ||
-                error.message ||
-                t.errorPDF;
+    if (!inputText.trim()) {
+        showToast(t.error, t.errorText, "destructive");
+        return;
+    }
 
-            showToast(t.error, backendMsg, "destructive");
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    // 👇 Detener voz activa antes de resumir
+    if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+    }
+
+    setIsLoading(true);
+    try {
+        const data = await resumirTexto({
+            texto: inputText,
+            resumen_nivel: summaryLevel,
+            lang: language,
+        });
+        setResult({
+            ...data,
+            summary: data.resumen ?? data.summary ?? "",
+        });
+    } catch (error) {
+        const backendMsg =
+            error.response?.data?.detail ||
+            error.response?.data?.error ||
+            error.message ||
+            t.errorPDF;
+        showToast(t.error, backendMsg, "destructive");
+    } finally {
+        setIsLoading(false);
+    }
+};
+
 
     const handlePdfSummarize = async (file) => {
         setIsLoading(true);
@@ -376,7 +447,7 @@ export default function TextSummarizer() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 py-10">
             {/* Toast */}
             {toast && (
                 <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
@@ -517,61 +588,62 @@ export default function TextSummarizer() {
                                 {activeTab === "pdf" && (
                                     <div className="space-y-6 mt-6">
                                         <div
-  className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center bg-gray-50/50 hover:bg-gray-50 transition-colors"
-  onDragOver={(e) => e.preventDefault()}
-  onDrop={(e) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type === "application/pdf") {
-      handlePdfSummarize(file);
-    } else {
-      showToast(t.error, "Solo se aceptan archivos PDF.", "destructive");
-    }
-  }}
->
-  <svg className="w-16 h-16 mx-auto text-gray-400 mb-6" fill="none"
-       stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-  </svg>
-  <p className="text-gray-600 mb-6 text-lg">{t.dragPDF}</p>
+                                            className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center bg-gray-50/50 hover:bg-gray-50 transition-colors"
+                                            onDragOver={(e) => e.preventDefault()}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                const file = e.dataTransfer.files?.[0];
+                                                if (file && file.type === "application/pdf") {
+                                                    handlePdfSummarize(file);
+                                                } else {
+                                                    showToast(t.error, "Solo se aceptan archivos PDF.", "destructive");
+                                                }
+                                            }}
+                                        >
+                                            <svg className="w-16 h-16 mx-auto text-gray-400 mb-6" fill="none"
+                                                 stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                            </svg>
+                                            <p className="text-gray-600 mb-6 text-lg">{t.dragPDF}</p>
 
-  <input
-    type="file"
-    accept="application/pdf"
-    onChange={(e) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        handlePdfSummarize(file);
-        e.target.value = null; // ← Permite reenviar el mismo archivo
-      }
-    }}
-    className="hidden"
-    id="pdf-upload"
-    disabled={isLoading}
-  />
+                                            <input
+                                                type="file"
+                                                accept="application/pdf"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        handlePdfSummarize(file);
+                                                        e.target.value = null; // ← Permite reenviar el mismo archivo
+                                                    }
+                                                }}
+                                                className="hidden"
+                                                id="pdf-upload"
+                                                disabled={isLoading}
+                                            />
 
-  <label
-    htmlFor="pdf-upload"
-    className={`inline-flex items-center gap-2 px-8 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors ${
-      isLoading ? "opacity-50 cursor-not-allowed" : ""
-    }`}
-  >
-    {isLoading ? (
-      <>
-        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10"
-                  stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        {t.processing}
-      </>
-    ) : (
-      t.choosePDF
-    )}
-  </label>
-</div>
+                                            <label
+                                                htmlFor="pdf-upload"
+                                                className={`inline-flex items-center gap-2 px-8 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors ${
+                                                    isLoading ? "opacity-50 cursor-not-allowed" : ""
+                                                }`}
+                                            >
+                                                {isLoading ? (
+                                                    <>
+                                                        <svg className="w-5 h-5 animate-spin" fill="none"
+                                                             viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10"
+                                                                    stroke="currentColor" strokeWidth="4"></circle>
+                                                            <path className="opacity-75" fill="currentColor"
+                                                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                        {t.processing}
+                                                    </>
+                                                ) : (
+                                                    t.choosePDF
+                                                )}
+                                            </label>
+                                        </div>
 
                                     </div>
                                 )}
@@ -629,6 +701,32 @@ export default function TextSummarizer() {
                                                           d="M3 21v-5h2v3h3v2zm13 0v-2h3v-3h2v5zM3 8V3h5v2H5v3zm16 0V5h-3V3h5v5z"/>
                                                 </svg>
                                             </button>
+                                            <button
+                                                onClick={speakTextResumen}
+                                                className="absolute bottom-2 right-5 text-gray-600 hover:text-gray-800"
+                                                title={isSpeaking ? "Detener lectura" : "Leer resumen en voz alta"}
+                                            >
+                                                {isSpeaking ? (
+                                                    // SVG de detener
+                                                    <svg width="24" height="24" viewBox="0 0 24 24"
+                                                         xmlns="http://www.w3.org/2000/svg">
+                                                        <path fill="currentColor"
+                                                              d="M6 16V8q0-.825.588-1.412T8 6h8q.825 0 1.413.588T18 8v8q0 .825-.587 1.413T16 18H8q-.825 0-1.412-.587T6 16m2 0h8V8H8zm4-4"/>
+                                                    </svg>
+                                                ) : (
+                                                    // SVG de volumen (leer)
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                                         className="lucide lucide-volume-2">
+                                                        <path
+                                                            d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/>
+                                                        <path d="M16 9a5 5 0 0 1 0 6"/>
+                                                        <path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>
+                                                    </svg>
+                                                )}
+                                            </button>
+
                                         </div>
 
                                     </div>
