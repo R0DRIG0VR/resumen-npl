@@ -9,7 +9,6 @@ import re
 
 app = FastAPI()
 
-# Habilitar CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # << solo para desarrollo
@@ -18,9 +17,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ----------------------------------------
-# STOPWORDS SIMPLES PARA DETECCIÓN IDIOMA
-# ----------------------------------------
 spanish_stopwords = {
     "el", "la", "y", "de", "que", "en", "a", "los", "se", "del",
     "las", "por", "un", "para", "con", "no", "una", "su", "al", "lo"
@@ -37,15 +33,10 @@ def detectar_idioma_simple(texto: str) -> str:
         return "es"
     return "unknown"
 
-
-# -------------------------
-# Modelo de entrada JSON
-# -------------------------
 class TextoRequest(BaseModel):
     texto: str
     resumen_nivel: float = 30
     lang: str = "es"
-
 
 @app.post("/analizar")
 async def analizar(data: TextoRequest):
@@ -67,7 +58,6 @@ async def analizar(data: TextoRequest):
 
     resultado = analizar_texto(texto, porcentaje, lang=lang, debug=True)
     return JSONResponse(content=resultado)
-
 
 @app.post("/analizar_pdf")
 async def analizar_pdf(

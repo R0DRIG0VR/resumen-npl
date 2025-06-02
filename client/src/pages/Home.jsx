@@ -37,7 +37,6 @@ export default function TextSummarizer() {
     ];
 
 
-    // Traducciones
     const translations = {
         es: {
             title: "Resumidor de Textos",
@@ -183,7 +182,6 @@ export default function TextSummarizer() {
 
     const t = translations[language];
 
-    // Toast notification
     const showToast = (title, description, variant = "default") => {
         setToast({title, description, variant});
         setTimeout(() => setToast(null), 3000);
@@ -313,7 +311,6 @@ export default function TextSummarizer() {
                 v.lang.startsWith("es") && v.name.toLowerCase().includes("mónica")
             );
         } else if (language === "en") {
-            // Puedes ajustar la preferencia de voz inglesa aquí
             selectedVoice = voices.find(v =>
                 v.lang.startsWith("en") &&
                 (v.name.includes("Google") || v.name.includes("Microsoft") || v.name.includes("Samantha"))
@@ -347,14 +344,12 @@ export default function TextSummarizer() {
         const resumenText = document.querySelector(".text-gray-800.whitespace-pre-wrap")?.textContent;
         if (!resumenText || !monicaVoice) return;
 
-        // Si está hablando, detenerlo
         if (window.speechSynthesis.speaking) {
             window.speechSynthesis.cancel();
             setIsSpeaking(false);
             return;
         }
 
-        // Iniciar lectura desde el inicio
         const utterance = new SpeechSynthesisUtterance(resumenText);
         utterance.lang = "es-ES";
         utterance.voice = monicaVoice;
@@ -367,7 +362,6 @@ export default function TextSummarizer() {
         window.speechSynthesis.speak(utterance);
     };
 
-    // Cambiado: usa resumirTexto del API
     const handleTextSummarize = async () => {
     if (!inputText.trim()) {
         showToast(t.error, t.errorText, "destructive");
@@ -448,7 +442,6 @@ export default function TextSummarizer() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 py-10">
-            {/* Toast */}
             {toast && (
                 <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
                     toast.variant === "destructive" ? "bg-red-500 text-white" : "bg-green-500 text-white"
@@ -467,7 +460,6 @@ export default function TextSummarizer() {
                     <div className="w-24 h-1 bg-gradient-to-r from-gray-400 to-gray-600 mx-auto rounded-full"></div>
                 </div>
 
-                {/* Language Selector */}
                 <div className="flex justify-center">
                     <div className="inline-flex rounded-md shadow-sm" role="group">
                         <button
@@ -496,7 +488,6 @@ export default function TextSummarizer() {
                 </div>
 
                 <div className="grid lg:grid-cols-2 gap-8">
-                    {/* Input Section */}
                     <div className="border-0 shadow-xl bg-white/70 backdrop-blur-sm rounded-lg overflow-hidden">
                         <div className="bg-gradient-to-r from-gray-800 to-gray-700 text-white p-6">
                             <h2 className="flex items-center gap-3 text-xl font-light">
@@ -508,7 +499,6 @@ export default function TextSummarizer() {
                             </h2>
                         </div>
                         <div className="space-y-8 p-8">
-                            {/* Slider */}
                             <div className="space-y-4">
                                 <label
                                     className="text-base font-medium text-gray-700">{t.summaryLevel}: {summaryLevel}%</label>
@@ -529,7 +519,6 @@ export default function TextSummarizer() {
                                 </div>
                             </div>
 
-                            {/* Tabs */}
                             <div className="w-full">
                                 <div className="grid w-full grid-cols-2 bg-gray-100 p-1 rounded-lg">
                                     <button
@@ -651,7 +640,6 @@ export default function TextSummarizer() {
                         </div>
                     </div>
 
-                    {/* Results Section */}
                     <div className="border-0 shadow-xl bg-white/70 backdrop-blur-sm rounded-lg overflow-hidden">
                         <div className="bg-gradient-to-r from-gray-700 to-gray-600 text-white p-6">
                             <div className="flex items-center justify-between">
@@ -680,7 +668,6 @@ export default function TextSummarizer() {
                         <div className="p-8">
                             {result ? (
                                 <div className="space-y-8">
-                                    {/* Summary Text */}
                                     <div className="space-y-3">
                                         <label className="text-base font-medium text-gray-700">{t.summary}</label>
                                         <div className="relative">
@@ -707,14 +694,12 @@ export default function TextSummarizer() {
                                                 title={isSpeaking ? "Detener lectura" : "Leer resumen en voz alta"}
                                             >
                                                 {isSpeaking ? (
-                                                    // SVG de detener
                                                     <svg width="24" height="24" viewBox="0 0 24 24"
                                                          xmlns="http://www.w3.org/2000/svg">
                                                         <path fill="currentColor"
                                                               d="M6 16V8q0-.825.588-1.412T8 6h8q.825 0 1.413.588T18 8v8q0 .825-.587 1.413T16 18H8q-.825 0-1.412-.587T6 16m2 0h8V8H8zm4-4"/>
                                                     </svg>
                                                 ) : (
-                                                    // SVG de volumen (leer)
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                          viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                                          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -731,7 +716,6 @@ export default function TextSummarizer() {
 
                                     </div>
 
-                                    {/* Keywords */}
                                     {result.keywords && (
                                         <div className="space-y-3">
                                             <label className="text-base font-medium text-gray-700">{t.keyTerms}</label>
@@ -763,7 +747,6 @@ export default function TextSummarizer() {
                     </div>
                 </div>
 
-                {/* Explicación Paso a Paso */}
                 <div className="border-0 shadow-xl bg-white/70 backdrop-blur-sm rounded-lg overflow-hidden">
                     <div className="bg-gradient-to-r from-gray-800 to-gray-700 text-white p-6">
                         <h2 className="flex items-center gap-3 text-xl font-light">
@@ -779,7 +762,6 @@ export default function TextSummarizer() {
                     </div>
                     <div className="p-8">
                         <div className="space-y-8">
-                            {/* Paso 1: Tokens Limpios */}
                             <div className="space-y-3">
                                 <div
                                     className="flex items-center gap-3 cursor-pointer"
@@ -847,7 +829,6 @@ export default function TextSummarizer() {
                                 </div>
                             </div>
 
-                            {/* Paso 2: Oraciones Segmentadas */}
                             <div className="space-y-3">
                                 <div
                                     className="flex items-center gap-3 cursor-pointer"
@@ -912,7 +893,6 @@ export default function TextSummarizer() {
                                 </div>
                             </div>
 
-                            {/* Paso 3: Palabras Clave por Oración (TF-IDF) */}
                             <div className="space-y-3">
                                 <div
                                     className="flex items-center gap-3 cursor-pointer"
@@ -997,7 +977,6 @@ export default function TextSummarizer() {
                                 </div>
                             </div>
 
-                            {/* Paso 4: Oraciones Seleccionadas por MMR */}
                             <div className="space-y-3">
                                 <div
                                     className="flex items-center gap-3 cursor-pointer"
@@ -1062,7 +1041,6 @@ export default function TextSummarizer() {
                                 </div>
                             </div>
 
-                            {/* Paso 5: Puntuaciones de MMR */}
                             <div className="space-y-3">
                                 <div
                                     className="flex items-center gap-3 cursor-pointer"
@@ -1142,7 +1120,6 @@ export default function TextSummarizer() {
                                 </div>
                             </div>
 
-                            {/* Paso 6: Resumen Final */}
                             <div className="space-y-3">
                                 <div
                                     className="flex items-center gap-3 cursor-pointer"

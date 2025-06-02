@@ -3,40 +3,26 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# -------------------------------
-# PIPES "EN BLANCO" POR IDIOMA
-# -------------------------------
 _nlp_pipelines = {
     "es": spacy.blank("es"),
     "en": spacy.blank("en"),
 }
 
-# Añadimos 'sentencizer' a cada pipeline
 for lang, nlp in _nlp_pipelines.items():
     nlp.add_pipe("sentencizer")
 
 
 def _get_nlp_for(lang: str):
-    """
-    Retorna el pipeline spaCy en blanco para el idioma dado.
-    Si no existe, devuelve el pipeline para "es".
-    """
     return _nlp_pipelines.get(lang, _nlp_pipelines["es"])
 
 
 def limpiar_texto(texto: str, lang: str = "es") -> list[str]:
-    """
-    Tokeniza el texto en minúsculas y devuelve solo tokens alfabéticos.
-    """
     nlp = _get_nlp_for(lang)
     doc = nlp(texto.lower())
     return [token.text for token in doc if token.is_alpha]
 
 
 def filtrar_redundancia(oraciones: list[str], tfidf: TfidfVectorizer, umbral: float = 0.8) -> list[str]:
-    """
-    Elimina oraciones redundantes según similitud coseno sobre TF-IDF.
-    """
     seleccionadas = []
     for o in oraciones:
         mat_o = tfidf.transform([o])
@@ -57,11 +43,6 @@ def seleccionar_mmr(
     n: int,
     lambda_: float = 0.7
 ) -> tuple[list[str], list[dict]]:
-    """
-    Selecciona n oraciones mediante MMR y devuelve:
-      - lista de oraciones seleccionadas
-      - lista de dicts con { "oracion", "indice", "score" }
-    """
     seleccion_indices: list[int] = []
     indices_disponibles = list(range(len(oraciones)))
     puntuaciones_mmr: list[dict] = []
@@ -110,11 +91,6 @@ def obtener_top_tfidf(
     oraciones: list[str],
     top_n: int = 3
 ) -> list[dict]:
-    """
-    Para cada oración (fila de 'matriz'), obtiene las 'top_n' palabras
-    con mayor TF-IDF y devuelve lista de dicts:
-      { "oracion": str, "top_tfidf": [(palabra, peso), ...] }
-    """
     nombres = tfidf.get_feature_names_out()
     pesos = matriz.toarray()
     resultados: list[dict] = []
@@ -136,17 +112,6 @@ def resumir_texto(
     lang: str = "es",
     debug: bool = False
 ) -> dict:
-    """
-    1. Segmenta 'texto' en oraciones usando spaCy en blanco para 'lang'.
-    2. Calcula TF-IDF sobre esas oraciones.
-    3. Selecciona 'n' oraciones vía MMR (n = total_oraciones * porcentaje).
-    4. Filtra redundancia sobre las seleccionadas.
-    5. Devuelve dict con "resumen" y, si debug=True, llaves adicionales:
-       - "oraciones_segmentadas"
-       - "top_palabras_por_oracion"
-       - "oraciones_mmr"
-       - "puntuaciones_mmr"
-    """
     nlp = _get_nlp_for(lang)
     doc = nlp(texto)
     oraciones = [sent.text.strip() for sent in doc.sents]
@@ -180,15 +145,6 @@ def analizar_texto(
     lang: str = "es",
     debug: bool = False
 ) -> dict:
-    """
-    Envuelve 'resumir_texto' y añade 'tokens_limpios'.
-    Devuelve dict con:
-      {
-        "resumen": "...",
-        "tokens_limpios": [...],
-        (otros campos si debug=True)
-      }
-    """
     tokens = limpiar_texto(texto, lang=lang)
     resumen_info = resumir_texto(texto, porcentaje, lang=lang, debug=debug)
     resumen_info["tokens_limpios"] = tokens

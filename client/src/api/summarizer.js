@@ -1,6 +1,6 @@
 import axios from "axios"
 
-  const BASE_URL = "http://localhost:8000" // cambia si lo desplegarás
+  const BASE_URL = "http://localhost:8000"
 
   export const resumirTexto = async ({ texto, resumen_nivel = 30, lang = "es" }) => {
     const response = await axios.post(`${BASE_URL}/analizar`, {

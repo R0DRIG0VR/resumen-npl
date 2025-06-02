@@ -1,6 +1,6 @@
 import { Route, Routes } from 'react-router';
 import Home from "./pages/Home.jsx";
-import Footer from "./components/Footer.jsx"; // Asegúrate de que la ruta sea correcta
+import Footer from "./components/Footer.jsx";
 
 function App() {
     return (
