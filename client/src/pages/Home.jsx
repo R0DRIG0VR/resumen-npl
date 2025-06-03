@@ -763,6 +763,54 @@ export default function TextSummarizer() {
                     </div>
                 </div>
 
+                {/* Evaluación ROUGE */}
+<div className="border-0 shadow-xl bg-white/70 backdrop-blur-sm rounded-lg overflow-hidden">
+  <div className="bg-gradient-to-r from-gray-800 to-gray-700 text-white p-6">
+    <h2 className="flex items-center gap-3 text-xl font-light">
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      Evaluación ROUGE
+    </h2>
+    <p className="text-gray-200 font-light mt-1">
+      Métricas de coincidencia entre el texto original y el resumen generado.
+    </p>
+  </div>
+
+  <div className="p-6 space-y-4">
+    {result?.evaluacion_rouge ? (
+      <>
+        <ul className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+          <li className="bg-gray-100 rounded-xl py-4 px-2">
+            <p className="text-2xl font-semibold text-gray-700">{result.evaluacion_rouge.rouge1}%</p>
+            <p className="text-sm text-gray-600 mt-1">ROUGE-1 (Unigramas)</p>
+          </li>
+          <li className="bg-gray-100 rounded-xl py-4 px-2">
+            <p className="text-2xl font-semibold text-gray-7000">{result.evaluacion_rouge.rouge2}%</p>
+            <p className="text-sm text-gray-600 mt-1">ROUGE-2 (Bigramas)</p>
+          </li>
+          <li className="bg-gray-100 rounded-xl py-4 px-2">
+            <p className="text-2xl font-semibold text-gray-700">{result.evaluacion_rouge.rougeL}%</p>
+            <p className="text-sm text-gray-600 mt-1">ROUGE-L (Secuencia más larga)</p>
+          </li>
+        </ul>
+        <div className="text-sm text-gray-700 space-y-1">
+          <p>📌 {result.evaluacion_rouge.detalles.unigramas}</p>
+          <p>📌 {result.evaluacion_rouge.detalles.bigramas}</p>
+          <p>📌 {result.evaluacion_rouge.detalles.lcs}</p>
+        </div>
+      </>
+    ) : (
+      <div className="text-gray-500 text-center py-4 italic">
+        No hay evaluación disponible todavía.
+      </div>
+    )}
+  </div>
+</div>
+
+
+
                 {/* Explicación Paso a Paso */}
                 <div className="border-0 shadow-xl bg-white/70 backdrop-blur-sm rounded-lg overflow-hidden">
                     <div className="bg-gradient-to-r from-gray-800 to-gray-700 text-white p-6">

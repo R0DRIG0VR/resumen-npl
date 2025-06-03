@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from utils.npl_utils import analizar_texto
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from PyPDF2 import PdfReader
+from utils.rouge_utils import evaluar_rouge
 import re
 
 app = FastAPI()
@@ -66,6 +67,12 @@ async def analizar(data: TextoRequest):
         raise HTTPException(status_code=400, detail=f"Idioma detectado en el texto: '{lang_detectado}', pero se solicitó resumir como '{lang}'.")
 
     resultado = analizar_texto(texto, porcentaje, lang=lang, debug=True)
+
+    # Calcular ROUGE comparando el resumen generado con el texto original
+    resumen_generado = resultado.get("resumen", "")
+    evaluacion_rouge = evaluar_rouge(texto, resumen_generado)
+
+    resultado["evaluacion_rouge"] = evaluacion_rouge
     return JSONResponse(content=resultado)
 
 
@@ -100,4 +107,10 @@ async def analizar_pdf(
         raise HTTPException(status_code=400, detail=f"Idioma detectado en el PDF: '{lang_detectado}', pero se solicitó resumir como '{lang}'.")
 
     resultado = analizar_texto(texto_plano, porcentaje, lang=lang, debug=True)
+
+    # 💡 Agregamos la evaluación ROUGE aquí:
+    resumen_generado = resultado.get("resumen", "")
+    evaluacion_rouge = evaluar_rouge(texto_plano, resumen_generado)
+    resultado["evaluacion_rouge"] = evaluacion_rouge
+
     return JSONResponse(content=resultado)
