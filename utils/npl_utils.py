@@ -26,7 +26,9 @@ def _get_nlp_for(lang: str):
 
 def limpiar_texto(texto: str, lang: str = "es") -> list[str]:
     """
-    Tokeniza el texto en minúsculas y devuelve solo tokens alfabéticos.
+    Convierte el texto a minúsculas
+    Usa spaCy para tokenizar el texto (dividirlo en palabras individuales)
+    Filtra solo tokens alfabéticos, eliminando números, signos de puntuación, etc.
     """
     nlp = _get_nlp_for(lang)
     doc = nlp(texto.lower())
@@ -147,9 +149,12 @@ def resumir_texto(
        - "oraciones_mmr"
        - "puntuaciones_mmr"
     """
+    
     nlp = _get_nlp_for(lang)
     doc = nlp(texto)
     oraciones = [sent.text.strip() for sent in doc.sents]
+    
+    
     total = len(oraciones)
 
     if total <= min_oraciones:
